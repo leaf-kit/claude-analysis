@@ -12,7 +12,7 @@
 [![Services](https://img.shields.io/badge/Services-19-red?style=flat-square)](./Services_Overview.md)
 [![Mermaid Diagrams](https://img.shields.io/badge/Mermaid_Diagrams-29-00ADD8?style=flat-square&logo=mermaid&logoColor=white)](#architecture)
 [![Source Code](https://img.shields.io/badge/Source_Code-1%2C902_Files-blueviolet?style=flat-square&logo=github)](#source-code-browse)
-[![Tutorial](https://img.shields.io/badge/📖_Tutorial-14_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
+[![Tutorial](https://img.shields.io/badge/📖_Tutorial-16_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)](#license)
 
 **이 프로젝트가 도움이 되셨다면 Star를 눌러주세요!**
@@ -3962,6 +3962,8 @@ git clone https://github.com/leaf-kit/claude-analysis.git
 | | 🔮 **특별편** | |
 | 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./tutorial/13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 |
 | 1️⃣4️⃣ | [**실행 흐름 완전 해부**](./tutorial/14_Execution_Flow.md) | 🔄 Enter→응답 15단계, 실전 예시, 루프, 프롬프트 |
+| 1️⃣5️⃣ | [**리버스 엔지니어링**](./tutorial/15_Reverse_Engineering.md) | 🔬 코드 스니펫 10개로 5대 설계 원칙 역공학 |
+| 1️⃣6️⃣ | [**다른 에이전트와 비교**](./tutorial/16_Comparison.md) | ⚔️ Codex, Cursor, Copilot, Aider, Devin 비교 |
 
 👉 **[📖 튜토리얼 시작하기](./tutorial/README.md)**
 

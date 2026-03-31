@@ -71,6 +71,8 @@ graph TD
 |:---|:-----|:---------|
 | 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 12개 비밀 |
 | 1️⃣4️⃣ | [**실행 흐름 완전 해부**](./14_Execution_Flow.md) | 🔄 Enter부터 응답까지 15단계 + 실전 예시 + 루프 표시 |
+| 1️⃣5️⃣ | [**리버스 엔지니어링 — 설계 철학 해부**](./15_Reverse_Engineering.md) | 🔬 코드 스니펫 10개로 5대 설계 원칙 역공학 |
+| 1️⃣6️⃣ | [**다른 코드 에이전트와의 비교**](./16_Comparison.md) | ⚔️ Codex, Cursor, Copilot, Aider, Devin 비교 분석 |
 
 ## 🚀 시작하기
 
