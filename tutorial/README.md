@@ -65,6 +65,12 @@ graph TD
 | 1️⃣1️⃣ | [**화면 시스템과 세션 관리**](./11_Screens_Sessions.md) | 📺 REPL, Vim 모드, 음성, Buddy |
 | 1️⃣2️⃣ | [**고급 패턴과 내부 최적화**](./12_Advanced_Patterns.md) | 🏗️ 8대 패턴, 동시성, 네이티브 TS 포트 |
 
+### 🔮 특별편
+
+| 장 | 문서 | 한 줄 설명 |
+|:---|:-----|:---------|
+| 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 12개 비밀 |
+
 ## 🚀 시작하기
 
 준비되셨나요? 그럼 첫 번째 장으로 가볼까요!

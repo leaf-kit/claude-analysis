@@ -10,13 +10,20 @@
 [![Files Analyzed](https://img.shields.io/badge/Files_Analyzed-1%2C902-orange?style=flat-square)](./Stats_Report.md)
 [![Tools](https://img.shields.io/badge/Tools-40+-green?style=flat-square)](./Tools_Overview.md)
 [![Services](https://img.shields.io/badge/Services-19-red?style=flat-square)](./Services_Overview.md)
+[![Mermaid Diagrams](https://img.shields.io/badge/Mermaid_Diagrams-29-00ADD8?style=flat-square&logo=mermaid&logoColor=white)](#architecture)
 [![Source Code](https://img.shields.io/badge/Source_Code-1%2C902_Files-blueviolet?style=flat-square&logo=github)](#source-code-browse)
-[![Tutorial](https://img.shields.io/badge/📖_Tutorial-12_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
+[![Tutorial](https://img.shields.io/badge/📖_Tutorial-13_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)](#license)
+
+**이 프로젝트가 도움이 되셨다면 Star를 눌러주세요!**
 
 [Index (MOC)](./Index.md) · [Directory Structure](./Directory_Structure.md) · [Stats Report](./Stats_Report.md) · [Source Code](./src/) · [Tutorial](./tutorial/README.md)
 
 </div>
+
+> **Quick Navigation** — README가 매우 길어요! 관심 분야로 바로 이동하세요:
+> | [유출 배경](#background--소스코드-유출-경위) | [아키텍처](#architecture) | [프롬프트 분석](#prompt--agent-architecture) | [소스코드 탐색](#source-code-browse) | [12장 튜토리얼](#tutorial) |
+> |:--|:--|:--|:--|:--|
 
 ---
 
@@ -24,6 +31,9 @@
 
 - [Overview](#overview)
 - [Background — 소스코드 유출 경위](#background--소스코드-유출-경위)
+  - [사건의 전말](#사건의-전말)
+  - [기술적 인사이트 — 소스맵 추출 과정](#기술적-인사이트--소스맵에서-전체-소스코드가-추출된-과정)
+  - [커뮤니티 인사이트 — 반복된 실수와 AI 경쟁](#커뮤니티-인사이트--같은-실수의-반복-그리고-ai-경쟁)
 - [Project Scale](#project-scale)
 - [Architecture](#architecture)
   - [Layered Architecture](#layered-architecture)
@@ -64,7 +74,8 @@
 - [Source Code Browse](#source-code-browse)
 - [Usage with Obsidian](#usage-with-obsidian)
 - [Tutorial](#tutorial)
-- [License](#license)
+- [License & Disclaimer](#license--disclaimer)
+- [Contributing](#contributing)
 
 ---
 
@@ -3948,22 +3959,40 @@ git clone https://github.com/leaf-kit/claude-analysis.git
 | 🔟 | [컨텍스트 압축과 토큰 관리](./tutorial/10_Context_Compaction.md) | 🧹 9항목 보존, 캐싱 전략 |
 | 1️⃣1️⃣ | [화면 시스템과 세션 관리](./tutorial/11_Screens_Sessions.md) | 📺 REPL, Vim, 음성, Buddy |
 | 1️⃣2️⃣ | [고급 패턴과 내부 최적화](./tutorial/12_Advanced_Patterns.md) | 🏗️ 8대 패턴, 동시성, TS 포트 |
+| | 🔮 **특별편** | |
+| 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./tutorial/13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 |
 
 👉 **[📖 튜토리얼 시작하기](./tutorial/README.md)**
 
 ---
 
-## License
+## License & Disclaimer
 
 이 분석 문서는 **교육 및 참고 목적**으로 작성되었습니다.
 
 - 분석 대상인 Claude Code는 [Anthropic](https://www.anthropic.com/)의 제품입니다.
-- 이 저장소의 마크다운 문서는 자유롭게 참고할 수 있습니다.
-- 원본 소스코드의 저작권은 Anthropic에 있습니다.
+- 이 저장소의 마크다운 분석 문서 및 튜토리얼은 자유롭게 참고할 수 있습니다.
+- `src/` 디렉터리의 원본 소스코드 저작권은 **Anthropic**에 있습니다.
+- 이 저장소는 npm 소스맵 유출로 공개된 코드를 **학습 목적으로 분석**한 것이며, 상업적 이용이나 재배포를 권장하지 않습니다.
+- Anthropic은 유출된 소스코드가 포함된 일부 GitHub 저장소에 대해 **DMCA 차단 조치**를 취한 바 있습니다.
+
+---
+
+## Contributing
+
+이 프로젝트에 기여하고 싶으시다면:
+
+- 분석 문서의 오류 수정, 누락된 모듈 분석 추가
+- 튜토리얼 개선 (설명 보강, 다이어그램 추가)
+- 새로운 인사이트나 아키텍처 발견 공유
+
+**Issue나 Pull Request를 환영합니다!**
 
 ---
 
 <div align="center">
+
+**이 프로젝트가 유용했다면 Star를 눌러주세요!**
 
 **[Top](#claude-code-cli--source-code-analysis)**
 
