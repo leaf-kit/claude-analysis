@@ -23,6 +23,25 @@ flowchart LR
 
 지원하는 속성: `flex-direction`, `justify-content`, `align-items`, `padding`, `margin`, `gap`, `width`, `height`, `flex-grow/shrink`
 
+일반적으로 Yoga는 C++이나 WebAssembly로 사용하지만, Claude Code는 **네이티브 바이너리 의존성을 없애기 위해** 1,500줄의 순수 TypeScript로 재구현했어요. 이 덕분에 어떤 플랫폼에서든 추가 설치 없이 바로 동작합니다.
+
+실제로 터미널에서 이렇게 동작해요:
+```
+┌──────────────────────────────────┐ ← Box (flexDirection: column)
+│ ┌────────────────────────────┐   │
+│ │ 대화 메시지 영역 (ScrollBox)│   │ ← flex: 1 (남은 공간 전체)
+│ │ User: 안녕?                │   │
+│ │ Claude: 안녕하세요!         │   │
+│ └────────────────────────────┘   │
+│ ┌────────────────────────────┐   │
+│ │ > 프롬프트 입력 _          │   │ ← 하단 고정
+│ └────────────────────────────┘   │
+│ ┌────────────────────────────┐   │
+│ │ claude-sonnet-4 · tokens: 1.2k│ │ ← StatusLine
+│ └────────────────────────────┘   │
+└──────────────────────────────────┘
+```
+
 > 소스: [`src/native-ts/yoga-layout/index.ts`](../src/native-ts/yoga-layout/index.ts) (1,500줄)
 
 ## 📺 프레임 더블버퍼링
@@ -45,7 +64,22 @@ flowchart TD
 
 프레임 간격: ~16ms (60fps), `FRAME_INTERVAL_MS`
 
-> 소스: [`src/ink/ink.tsx`](../src/ink/ink.tsx) (1,722줄)
+이 방식 덕분에 타이핑할 때도, 긴 응답을 스트리밍할 때도 **화면이 깜빡이지 않아요**. 변경된 문자만 정확히 업데이트되기 때문이죠.
+
+> 소스: [`src/ink/ink.tsx`](../src/ink/ink.tsx) (1,722줄) · [`src/ink/renderer.ts`](../src/ink/renderer.ts) · [`src/ink/log-update.ts`](../src/ink/log-update.ts)
+
+## 🎯 왜 React를 터미널에?
+
+"터미널에 React를?" 라고 생각할 수 있지만, 이유가 명확해요:
+
+| 이유 | 설명 |
+|:-----|:-----|
+| **선언적 UI** | "이 상태면 이렇게 보여야 한다"만 정의하면 됨 |
+| **컴포넌트 재사용** | 권한 다이얼로그, 메시지 등을 컴포넌트로 |
+| **상태 관리** | React Hooks로 복잡한 상태를 깔끔하게 |
+| **389개 컴포넌트** | 이 규모를 수동 렌더링으로는 불가능 |
+
+React는 "어떻게 그릴지"가 아니라 "무엇을 그릴지"만 알려주면 되기 때문에, 복잡한 터미널 UI를 관리하기에 최적이에요.
 
 ## 🧩 핵심 컴포넌트
 

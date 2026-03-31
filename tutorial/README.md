@@ -70,6 +70,7 @@ graph TD
 | 장 | 문서 | 한 줄 설명 |
 |:---|:-----|:---------|
 | 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 12개 비밀 |
+| 1️⃣4️⃣ | [**실행 흐름 완전 해부**](./14_Execution_Flow.md) | 🔄 Enter부터 응답까지 15단계 + 실전 예시 + 루프 표시 |
 
 ## 🚀 시작하기
 

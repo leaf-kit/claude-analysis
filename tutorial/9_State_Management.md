@@ -1,6 +1,6 @@
 # ⚙️ 상태 관리와 글로벌 스토어
 
-> Claude Code는 **209개의 getter/setter**를 가진 글로벌 상태 싱글톤으로 앱 전체 상태를 관리합니다.
+> 웹 앱에서 Redux나 Zustand를 쓰듯이, Claude Code도 앱 전체의 상태를 한 곳에서 관리합니다. 이 장에서는 **209개의 getter/setter**를 가진 글로벌 상태 싱글톤과, React 컴포넌트와 연동되는 반응적 스토어를 분석합니다.
 
 ## 🏗️ 2계층 상태 구조
 
@@ -28,9 +28,13 @@ graph TD
     style AppState fill:#e8f5e9,stroke:#2e7d32
 ```
 
+**왜 두 계층인가요?**
+
+`bootstrap/state.ts`는 **어디서든 import해서 바로 읽고 쓸 수 있는** 단순한 싱글톤이에요. 빠르지만 React와 연동이 안 돼요. 반면 `AppStateStore`는 **React의 `useSyncExternalStore`와 호환**되어서 상태가 바뀌면 자동으로 컴포넌트가 리렌더링돼요. 둘을 조합해서, 성능이 중요한 곳은 싱글톤을, UI 연동이 필요한 곳은 스토어를 사용합니다.
+
 ## 📊 비용 추적
 
-모든 API 호출의 비용과 토큰 사용량이 실시간으로 추적돼요:
+Claude Code는 모든 API 호출의 **비용과 토큰 사용량을 실시간으로 추적**해요. 세션이 끝나면 저장하고, 다음 세션에서 복원할 수도 있어요:
 
 ```typescript
 // 세션 중

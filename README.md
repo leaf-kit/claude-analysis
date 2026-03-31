@@ -12,7 +12,7 @@
 [![Services](https://img.shields.io/badge/Services-19-red?style=flat-square)](./Services_Overview.md)
 [![Mermaid Diagrams](https://img.shields.io/badge/Mermaid_Diagrams-29-00ADD8?style=flat-square&logo=mermaid&logoColor=white)](#architecture)
 [![Source Code](https://img.shields.io/badge/Source_Code-1%2C902_Files-blueviolet?style=flat-square&logo=github)](#source-code-browse)
-[![Tutorial](https://img.shields.io/badge/📖_Tutorial-13_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
+[![Tutorial](https://img.shields.io/badge/📖_Tutorial-14_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)](#license)
 
 **이 프로젝트가 도움이 되셨다면 Star를 눌러주세요!**
@@ -3961,6 +3961,7 @@ git clone https://github.com/leaf-kit/claude-analysis.git
 | 1️⃣2️⃣ | [고급 패턴과 내부 최적화](./tutorial/12_Advanced_Patterns.md) | 🏗️ 8대 패턴, 동시성, TS 포트 |
 | | 🔮 **특별편** | |
 | 1️⃣3️⃣ | [**소스코드에 숨겨진 비밀들**](./tutorial/13_Hidden_Secrets.md) | 🔮 autoDream, Speculation, YOLO, Buddy, Tengu 등 |
+| 1️⃣4️⃣ | [**실행 흐름 완전 해부**](./tutorial/14_Execution_Flow.md) | 🔄 Enter→응답 15단계, 실전 예시, 루프, 프롬프트 |
 
 👉 **[📖 튜토리얼 시작하기](./tutorial/README.md)**
 
