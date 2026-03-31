@@ -113,6 +113,54 @@ flowchart LR
 
 > 이 저장소는 유출된 소스코드를 **교육 및 아키텍처 분석 목적**으로 정리한 것입니다.
 
+### 기술적 인사이트 — 소스맵에서 전체 소스코드가 추출된 과정
+
+> **이것은 해킹이 아닙니다.** Anthropic 자체가 소스 맵(`cli.js.map`)을 npm 릴리스에 포함시킨 것이 원인입니다.
+
+**57MB `cli.js.map` 파일의 구조:**
+
+| 항목 | 값 |
+|:-----|:---|
+| **전체 소스 파일 수** | 4,756개 |
+| **Claude Code 자체** | 1,906개 (TypeScript/TSX) |
+| **node_modules 종속성** | 2,850개 |
+
+**추출 방법:** `cli.js.map`은 단순한 JSON 객체로, 두 개의 키 배열만 읽으면 됩니다:
+- `sources[]` — 파일 경로 배열
+- `sourcesContent[]` — 해당 파일의 **정확한 원본 코드** 배열
+
+두 배열의 인덱스가 1:1 대응하므로, 역컴파일이나 난독화 해제 없이 원본 소스를 그대로 복원할 수 있습니다.
+
+```mermaid
+flowchart LR
+    NPM["npm install<br/>@anthropic-ai/claude-code"] --> Map["cli.js.map (57MB)<br/>JSON 파일"]
+    Map --> Sources["sources[]: 4,756개 파일 경로"]
+    Map --> Content["sourcesContent[]: 원본 코드"]
+    Sources --> Extract["인덱스 1:1 대응<br/>→ 파일 복원"]
+    Content --> Extract
+    Extract --> Full["전체 소스코드<br/>(아키텍처, 시스템 프롬프트,<br/>도구 호출 로직 포함)"]
+
+    style Map fill:#ffebee,stroke:#c62828
+    style Full fill:#e8f5e9,stroke:#2e7d32
+```
+
+**복원된 소스에서 확인된 것들:**
+- React + Ink 기반 CLI 인터페이스 구축
+- 자연어 입력과 슬래시 명령어를 지원하는 REPL 루프
+- 도구 시스템을 통한 LLM API 상호작용
+- 아키텍처 설계, 시스템 프롬프트, 도구 호출 로직 전체
+
+**사건의 교훈:**
+
+> **소스 맵(Source Map)은 프로덕션에 배포해서는 안 됩니다.**
+> 소스 맵은 개발/디버깅 용도로 변수 이름부터 주석까지 모든 정보를 포함합니다.
+> `sourcesContent`에 한 줄만 포함되어도 전체 코드가 공개됩니다.
+
+- Anthropic은 이후 소스 맵을 삭제하고, 추출된 GitHub 저장소를 **DMCA로 차단**했습니다
+- 그러나 npm 패키지의 이전 버전들은 이미 아카이빙되어 소스 코드가 커뮤니티에 유포된 상태였습니다
+
+> **npm 패키지를 게시하는 모든 개발자에게:** 게시 전에 `.map` 파일을 반드시 확인하세요.
+
 ---
 
 ## Project Scale
