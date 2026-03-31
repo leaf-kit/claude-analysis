@@ -11,9 +11,10 @@
 [![Tools](https://img.shields.io/badge/Tools-40+-green?style=flat-square)](./Tools_Overview.md)
 [![Services](https://img.shields.io/badge/Services-19-red?style=flat-square)](./Services_Overview.md)
 [![Source Code](https://img.shields.io/badge/Source_Code-1%2C902_Files-blueviolet?style=flat-square&logo=github)](#source-code-browse)
+[![Tutorial](https://img.shields.io/badge/Tutorial-4_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)](#license)
 
-[Index (MOC)](./Index.md) · [Directory Structure](./Directory_Structure.md) · [Stats Report](./Stats_Report.md) · [Source Code](./src/)
+[Index (MOC)](./Index.md) · [Directory Structure](./Directory_Structure.md) · [Stats Report](./Stats_Report.md) · [Source Code](./src/) · [Tutorial](./tutorial/README.md)
 
 </div>
 
@@ -62,6 +63,7 @@
 - [Document Map](#document-map)
 - [Source Code Browse](#source-code-browse)
 - [Usage with Obsidian](#usage-with-obsidian)
+- [Tutorial](#tutorial)
 - [License](#license)
 
 ---
@@ -3857,6 +3859,21 @@ git clone https://github.com/leaf-kit/claude-analysis.git
 | [Dataview](https://github.com/blacksmithgu/obsidian-dataview) | YAML frontmatter 기반 동적 테이블/리스트 |
 | [Graph Analysis](https://github.com/SkepticMystic/graph-analysis) | 그래프 중심성, 클러스터 분석 |
 | [Admonition](https://github.com/javalent/admonitions) | 정보/경고/팁 박스 렌더링 |
+
+---
+
+## Tutorial
+
+> 초등학생부터 시니어 엔지니어까지, Claude Code의 내부를 쉽고 재미있게 이해할 수 있는 **4장 튜토리얼**입니다.
+
+| 장 | 제목 | 내용 |
+|:---|:-----|:-----|
+| 1️⃣ | [우리의 똑똑한 친구, Claude](./tutorial/1_Hello_Claude.md) | 🤖 Claude와 Claude Code 소개, 4가지 API 프로바이더 |
+| 2️⃣ | [스스로 생각하는 에이전트](./tutorial/2_What_is_Agent.md) | 🕵️ 에이전트 개념, 40개 도구, 6개 내장 에이전트, 코디네이터 모드 |
+| 3️⃣ | [AI를 움직이는 프롬프트 마법](./tutorial/3_Prompt_Magic.md) | 🪄 15개 프롬프트 블록, CLAUDE.md 계층, 컨텍스트 압축 |
+| 4️⃣ | [실제 코드로 보는 구조](./tutorial/4_Code_Tour.md) | 🛠️ 소스코드 파일별 코드 투어 (엔지니어 가이드) |
+
+👉 **[튜토리얼 시작하기](./tutorial/README.md)**
 
 ---
 
