@@ -10,45 +10,60 @@
 | 🧑‍💻 **개발자** | Claude Code의 아키텍처와 실행 흐름 파악 |
 | 🏗️ **엔지니어** | 소스코드 레벨에서 프롬프트 조립, 에이전트 스포닝 메커니즘 이해 |
 
-## 📚 학습 순서
-
-아래 순서대로 읽으면 자연스럽게 이해가 쌓여요!
+## 📚 학습 순서 (12장)
 
 ```mermaid
-graph LR
-    A["1️⃣ Claude 소개"] --> B["2️⃣ 에이전트란?"]
-    B --> C["3️⃣ 프롬프트 마법"]
-    C --> D["4️⃣ 코드 투어"]
+graph TD
+    subgraph 초급["🟢 초급 (1-4장)"]
+        A["1️⃣ Claude 소개"] --> B["2️⃣ 에이전트"]
+        B --> C["3️⃣ 프롬프트"]
+        C --> D["4️⃣ 코드 투어"]
+    end
+    subgraph 중급["🟡 중급 (5-8장)"]
+        E["5️⃣ 메모리"] --> F["6️⃣ 보안"]
+        F --> G["7️⃣ MCP/확장"]
+        G --> H["8️⃣ 렌더링"]
+    end
+    subgraph 고급["🔴 고급 (9-12장)"]
+        I["9️⃣ 상태 관리"] --> J["🔟 압축"]
+        J --> K["1️⃣1️⃣ 화면/세션"]
+        K --> L["1️⃣2️⃣ 고급 패턴"]
+    end
 
-    style A fill:#e3f2fd,stroke:#1565c0
-    style B fill:#e8f5e9,stroke:#2e7d32
-    style C fill:#f3e5f5,stroke:#7b1fa2
-    style D fill:#fff3e0,stroke:#ef6c00
+    D --> E
+    H --> I
+
+    style 초급 fill:#e8f5e9,stroke:#2e7d32
+    style 중급 fill:#fff3e0,stroke:#ef6c00
+    style 고급 fill:#ffebee,stroke:#c62828
 ```
 
-| 순서 | 문서 | 한 줄 설명 |
-|:-----|:-----|:---------|
-| 1️⃣ | [**우리의 똑똑한 친구, Claude**](./1_Hello_Claude.md) | 🤖 Claude가 뭔지, 어떻게 대화하는지 알아봐요 |
-| 2️⃣ | [**스스로 생각하는 에이전트**](./2_What_is_Agent.md) | 🕵️ 시키는 대로만 하는 프로그램과 에이전트의 차이 |
-| 3️⃣ | [**AI를 움직이는 마법의 주문**](./3_Prompt_Magic.md) | 🪄 프롬프트 엔지니어링의 비밀을 파헤쳐요 |
-| 4️⃣ | [**실제 코드로 보는 구조**](./4_Code_Tour.md) | 🛠️ 소스코드를 직접 따라가며 이해하는 엔지니어 가이드 |
+### 🟢 초급 — 기초 다지기
 
-## 🏗️ 프로젝트 구조
+| 장 | 문서 | 한 줄 설명 |
+|:---|:-----|:---------|
+| 1️⃣ | [**우리의 똑똑한 친구, Claude**](./1_Hello_Claude.md) | 🤖 Claude와 Claude Code 소개, API 프로바이더 |
+| 2️⃣ | [**스스로 생각하는 에이전트**](./2_What_is_Agent.md) | 🕵️ ReAct 패턴, 40개 도구, 6개 내장 에이전트 |
+| 3️⃣ | [**AI를 움직이는 프롬프트 마법**](./3_Prompt_Magic.md) | 🪄 15개 프롬프트 블록, CLAUDE.md 계층 |
+| 4️⃣ | [**실제 코드로 보는 구조**](./4_Code_Tour.md) | 🛠️ 5-Stop 소스코드 가이드 투어 |
 
-```
-이 저장소/
-├── tutorial/           ← 📖 지금 보고 있는 튜토리얼
-│   ├── README.md       ← 🗺️ 이 파일 (전체 지도)
-│   ├── 1_Hello_Claude.md
-│   ├── 2_What_is_Agent.md
-│   ├── 3_Prompt_Magic.md
-│   └── 4_Code_Tour.md
-│
-├── src/                ← 💻 Claude Code 실제 소스코드 (1,902개 파일)
-├── Index.md            ← 🧭 분석 문서 지도 (Map of Content)
-├── README.md           ← 📋 프로젝트 전체 README
-└── ...                 ← 📄 39개 분석 문서
-```
+### 🟡 중급 — 시스템 이해
+
+| 장 | 문서 | 한 줄 설명 |
+|:---|:-----|:---------|
+| 5️⃣ | [**AI의 기억 시스템**](./5_Memory_System.md) | 🧠 세션/자동/팀 메모리, 추출 에이전트, MEMORY.md |
+| 6️⃣ | [**보안과 권한 시스템**](./6_Security_Permissions.md) | 🛡️ 3층 방어, 12단계 권한, AST 기반 Bash 보안 |
+| 7️⃣ | [**MCP와 확장성**](./7_MCP_Extensibility.md) | 🔌 MCP 4 프로토콜, 스킬, 플러그인, 명령어 |
+| 8️⃣ | [**터미널 렌더링 엔진**](./8_Ink_Rendering.md) | 🖥️ React→Yoga→ANSI 파이프라인, 더블 버퍼링 |
+
+### 🔴 고급 — 깊은 이해
+
+| 장 | 문서 | 한 줄 설명 |
+|:---|:-----|:---------|
+| 9️⃣ | [**상태 관리와 글로벌 스토어**](./9_State_Management.md) | ⚙️ 209개 상태, 비용 추적, 반응적 Store |
+| 🔟 | [**컨텍스트 압축과 토큰 관리**](./10_Context_Compaction.md) | 🧹 9항목 보존, 3가지 압축 전략, 캐싱 |
+| 1️⃣1️⃣ | [**화면 시스템과 세션 관리**](./11_Screens_Sessions.md) | 📺 REPL, Vim 모드, 음성, Buddy |
+| 1️⃣2️⃣ | [**고급 패턴과 내부 최적화**](./12_Advanced_Patterns.md) | 🏗️ 8대 패턴, 동시성, 네이티브 TS 포트 |
 
 ## 🚀 시작하기
 

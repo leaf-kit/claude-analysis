@@ -11,7 +11,7 @@
 [![Tools](https://img.shields.io/badge/Tools-40+-green?style=flat-square)](./Tools_Overview.md)
 [![Services](https://img.shields.io/badge/Services-19-red?style=flat-square)](./Services_Overview.md)
 [![Source Code](https://img.shields.io/badge/Source_Code-1%2C902_Files-blueviolet?style=flat-square&logo=github)](#source-code-browse)
-[![Tutorial](https://img.shields.io/badge/Tutorial-4_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
+[![Tutorial](https://img.shields.io/badge/📖_Tutorial-12_Chapters-ff69b4?style=flat-square&logo=bookstack&logoColor=white)](./tutorial/README.md)
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)](#license)
 
 [Index (MOC)](./Index.md) · [Directory Structure](./Directory_Structure.md) · [Stats Report](./Stats_Report.md) · [Source Code](./src/) · [Tutorial](./tutorial/README.md)
@@ -3864,16 +3864,27 @@ git clone https://github.com/leaf-kit/claude-analysis.git
 
 ## Tutorial
 
-> 초등학생부터 시니어 엔지니어까지, Claude Code의 내부를 쉽고 재미있게 이해할 수 있는 **4장 튜토리얼**입니다.
+> 🟢 초급부터 🔴 고급까지, **12장 완전 가이드**로 Claude Code의 내부를 쉽고 깊게 이해할 수 있습니다.
+> 이모지, Mermaid 다이어그램, 실제 소스코드 링크, 엔지니어 팁이 모두 포함되어 있습니다.
 
-| 장 | 제목 | 내용 |
+| | 🟢 **초급** | |
 |:---|:-----|:-----|
-| 1️⃣ | [우리의 똑똑한 친구, Claude](./tutorial/1_Hello_Claude.md) | 🤖 Claude와 Claude Code 소개, 4가지 API 프로바이더 |
-| 2️⃣ | [스스로 생각하는 에이전트](./tutorial/2_What_is_Agent.md) | 🕵️ 에이전트 개념, 40개 도구, 6개 내장 에이전트, 코디네이터 모드 |
-| 3️⃣ | [AI를 움직이는 프롬프트 마법](./tutorial/3_Prompt_Magic.md) | 🪄 15개 프롬프트 블록, CLAUDE.md 계층, 컨텍스트 압축 |
-| 4️⃣ | [실제 코드로 보는 구조](./tutorial/4_Code_Tour.md) | 🛠️ 소스코드 파일별 코드 투어 (엔지니어 가이드) |
+| 1️⃣ | [우리의 똑똑한 친구, Claude](./tutorial/1_Hello_Claude.md) | 🤖 Claude 소개, 4가지 API |
+| 2️⃣ | [스스로 생각하는 에이전트](./tutorial/2_What_is_Agent.md) | 🕵️ ReAct 패턴, 6개 에이전트, 코디네이터 |
+| 3️⃣ | [AI를 움직이는 프롬프트 마법](./tutorial/3_Prompt_Magic.md) | 🪄 15개 프롬프트 블록, CLAUDE.md |
+| 4️⃣ | [실제 코드로 보는 구조](./tutorial/4_Code_Tour.md) | 🛠️ 5-Stop 소스코드 투어 |
+| | 🟡 **중급** | |
+| 5️⃣ | [AI의 기억 시스템](./tutorial/5_Memory_System.md) | 🧠 세션/자동/팀 메모리, 추출 에이전트 |
+| 6️⃣ | [보안과 권한 시스템](./tutorial/6_Security_Permissions.md) | 🛡️ 3층 방어, 12단계 권한, AST Bash 보안 |
+| 7️⃣ | [MCP와 확장성](./tutorial/7_MCP_Extensibility.md) | 🔌 MCP 프로토콜, 스킬, 플러그인 |
+| 8️⃣ | [터미널 렌더링 엔진](./tutorial/8_Ink_Rendering.md) | 🖥️ React→Yoga→ANSI, 더블 버퍼링 |
+| | 🔴 **고급** | |
+| 9️⃣ | [상태 관리와 글로벌 스토어](./tutorial/9_State_Management.md) | ⚙️ 209개 상태, 비용 추적 |
+| 🔟 | [컨텍스트 압축과 토큰 관리](./tutorial/10_Context_Compaction.md) | 🧹 9항목 보존, 캐싱 전략 |
+| 1️⃣1️⃣ | [화면 시스템과 세션 관리](./tutorial/11_Screens_Sessions.md) | 📺 REPL, Vim, 음성, Buddy |
+| 1️⃣2️⃣ | [고급 패턴과 내부 최적화](./tutorial/12_Advanced_Patterns.md) | 🏗️ 8대 패턴, 동시성, TS 포트 |
 
-👉 **[튜토리얼 시작하기](./tutorial/README.md)**
+👉 **[📖 튜토리얼 시작하기](./tutorial/README.md)**
 
 ---
 
