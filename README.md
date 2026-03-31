@@ -48,6 +48,17 @@
   - [Memory System](#12-memory-system)
   - [Additional Modules](#13-additional-modules)
 - [Module Distribution](#module-distribution)
+- [Prompt & Agent Architecture](#prompt--agent-architecture)
+  - [System Prompt Assembly Order](#1-system-prompt-assembly-order)
+  - [Context Injection Flow](#2-context-injection-flow)
+  - [API Request Assembly](#3-api-request-assembly)
+  - [Built-In Agent Types](#4-built-in-agent-types)
+  - [Agent Spawning & Prompt Flow](#5-agent-spawning--prompt-flow)
+  - [Coordinator Mode](#6-coordinator-mode)
+  - [Context Compaction Prompt](#7-context-compaction-prompt)
+  - [Memory Extraction Prompt](#8-memory-extraction-prompt)
+  - [CLAUDE.md Loading Chain](#9-claudemd-loading-chain)
+  - [End-to-End Prompt Flow](#10-end-to-end-prompt-flow-summary)
 - [Document Map](#document-map)
 - [Source Code Browse](#source-code-browse)
 - [Usage with Obsidian](#usage-with-obsidian)
@@ -1016,6 +1027,610 @@ others      ████                                      156  (8.2%)
 ```
 
 > 상세: [Stats_Report.md](./Stats_Report.md)
+
+---
+
+## Prompt & Agent Architecture
+
+> 소스코드 기반으로 분석한 Claude Code의 **프롬프트 조립 순서**, **에이전트 구성**, **API 호출 구조**.
+> 사용자 입력이 어떤 프롬프트와 결합되어 Claude API에 전달되는지, 그 전체 흐름을 추적합니다.
+
+### 1. System Prompt Assembly Order
+
+Claude Code의 시스템 프롬프트는 [`src/constants/prompts.ts`](./src/constants/prompts.ts)의 `getSystemPrompt()` 함수에서 조립됩니다.
+**캐시 가능한 정적 구간**과 **세션별 동적 구간**이 `SYSTEM_PROMPT_DYNAMIC_BOUNDARY` 마커로 분리됩니다.
+
+```mermaid
+flowchart TD
+    subgraph STATIC["정적 구간 (Cacheable — 글로벌 캐시 가능)"]
+        direction TB
+        S1["1. getSimpleIntroSection()<br/><i>'You are Claude Code,<br/>Anthropic's official CLI...'</i>"]
+        S2["2. getSimpleSystemSection()<br/><i>도구 권한, 태그, 훅, 압축 규칙</i>"]
+        S3["3. getSimpleDoingTasksSection()<br/><i>코드 작성 가이드라인, 보안 규칙</i>"]
+        S4["4. getActionsSection()<br/><i>가역성, 영향 범위, 확인 요청 규칙</i>"]
+        S5["5. getUsingYourToolsSection()<br/><i>도구 사용 가이드 (Bash보다 전용 도구)</i>"]
+        S6["6. getSimpleToneAndStyleSection()<br/><i>톤 & 스타일 (이모지 금지 등)</i>"]
+        S7["7. getOutputEfficiencySection()<br/><i>출력 간결성 지침</i>"]
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+    end
+
+    BOUNDARY["═══ SYSTEM_PROMPT_DYNAMIC_BOUNDARY ═══"]
+
+    subgraph DYNAMIC["동적 구간 (세션별 — systemPromptSection() 레지스트리)"]
+        direction TB
+        D1["8. session_guidance<br/><i>에이전트 도구, 스킬, 검증 에이전트</i>"]
+        D2["9. memory<br/><i>loadMemoryPrompt() — 메모리 지침</i>"]
+        D3["10. env_info_simple<br/><i>cwd, git 상태, 모델, OS, 셸</i>"]
+        D4["11. language<br/><i>언어 선호 설정</i>"]
+        D5["12. mcp_instructions<br/><i>MCP 서버 지침 (volatile)</i>"]
+        D6["13. scratchpad<br/><i>스크래치패드 디렉터리</i>"]
+        D7["14. frc / summarize_tool_results<br/><i>함수 결과 정리 / 도구 결과 요약</i>"]
+        D8["15. token_budget / brief<br/><i>토큰 예산, KAIROS 브리프</i>"]
+        D1 --> D2 --> D3 --> D4 --> D5 --> D6 --> D7 --> D8
+    end
+
+    STATIC --> BOUNDARY --> DYNAMIC
+
+    style STATIC fill:#e8f5e9,stroke:#2e7d32
+    style BOUNDARY fill:#fff9c4,stroke:#f9a825,stroke-width:3px
+    style DYNAMIC fill:#e3f2fd,stroke:#1565c0
+```
+
+**시스템 프롬프트 우선순위 체인** — [`src/utils/systemPrompt.ts`](./src/utils/systemPrompt.ts)의 `buildEffectiveSystemPrompt()`:
+
+```mermaid
+flowchart LR
+    Override["1. Override<br/>(loop 모드)"]
+    Coord["2. Coordinator<br/>시스템 프롬프트"]
+    Agent["3. Agent 정의<br/>시스템 프롬프트"]
+    Custom["4. --system-prompt<br/>플래그"]
+    Default["5. Default<br/>시스템 프롬프트"]
+
+    Override -->|"없으면"| Coord
+    Coord -->|"없으면"| Agent
+    Agent -->|"없으면"| Custom
+    Custom -->|"없으면"| Default
+
+    Append["+ appendSystemPrompt<br/>(항상 추가)"]
+    Override -.-> Append
+    Coord -.-> Append
+    Agent -.-> Append
+    Custom -.-> Append
+    Default -.-> Append
+
+    style Override fill:#ffebee,stroke:#c62828
+    style Default fill:#e8f5e9,stroke:#2e7d32
+    style Append fill:#fff3e0,stroke:#ef6c00
+```
+
+> 소스: [`src/constants/prompts.ts`](./src/constants/prompts.ts) · [`src/utils/systemPrompt.ts`](./src/utils/systemPrompt.ts)
+
+---
+
+### 2. Context Injection Flow
+
+시스템 프롬프트 외에 **User Context**와 **System Context**가 별도로 조립되어 API 호출에 주입됩니다.
+
+```mermaid
+sequenceDiagram
+    participant QE as QueryEngine.ts<br/>submitMessage()
+    participant CTX as context.ts
+    participant CMD as claudemd.ts
+    participant GIT as git utils
+    participant API as API 호출
+
+    QE->>CTX: getUserContext()
+    activate CTX
+    CTX->>CMD: getClaudeMds()
+    CMD-->>CTX: CLAUDE.md 계층 콘텐츠
+    CTX-->>QE: { claudeMd, currentDate }
+    deactivate CTX
+
+    QE->>CTX: getSystemContext()
+    activate CTX
+    CTX->>GIT: getGitStatus()
+    GIT-->>CTX: branch, commits, status
+    CTX-->>QE: { gitStatus, cacheBreaker }
+    deactivate CTX
+
+    QE->>API: prependUserContext()<br/>→ messages[0]에 system-reminder 삽입
+    QE->>API: appendSystemContext()<br/>→ system 배열 끝에 추가
+```
+
+**주입 위치:**
+
+| 컨텍스트 | API 파라미터 | 형식 | 소스 |
+|:---------|:-----------|:-----|:-----|
+| **claudeMd** | `messages[0]` (user role) | `<system-reminder># claudeMd\n{내용}</system-reminder>` | [`src/utils/claudemd.ts`](./src/utils/claudemd.ts) |
+| **currentDate** | `messages[0]` (user role) | `# currentDate\nToday's date is 2026-04-01` | [`src/context.ts`](./src/context.ts) |
+| **gitStatus** | `system` 배열 끝 | `gitStatus: branch main, 3 commits...` | [`src/context.ts`](./src/context.ts) |
+
+---
+
+### 3. API Request Assembly
+
+[`src/services/api/claude.ts`](./src/services/api/claude.ts)의 `paramsFromContext()`에서 최종 API 파라미터가 조립됩니다.
+
+```mermaid
+flowchart TD
+    subgraph Params["최종 API 파라미터 (paramsFromContext)"]
+        direction TB
+        system["<b>system:</b><br/>TextBlockParam[]<br/>시스템 프롬프트 블록 + 캐시 마커"]
+        messages["<b>messages:</b><br/>정규화된 메시지 배열<br/>+ UserContext system-reminder<br/>+ 캐시 브레이크포인트"]
+        tools["<b>tools:</b><br/>도구 스키마 배열 (40+)<br/>name, description, input_schema<br/>+ cache_control"]
+        model["<b>model:</b><br/>claude-sonnet-4-20250514"]
+        thinking["<b>thinking:</b><br/>{ type: 'adaptive' }<br/>or budget_tokens"]
+        betas["<b>betas:</b><br/>interleaved-thinking<br/>advanced-tool-use<br/>prompt-caching-scope"]
+        metadata["<b>metadata:</b><br/>device_id, session_id, user_id"]
+        max_tokens["<b>max_tokens:</b> 16384"]
+    end
+
+    System_Prompt["getSystemPrompt()"] --> system
+    Context["getUserContext()<br/>getSystemContext()"] --> messages
+    ToolReg["도구 레지스트리<br/>toolToAPISchema()"] --> tools
+    Config["모델/설정"] --> model
+    Config --> thinking
+    Config --> betas
+
+    style Params fill:#f5f5f5,stroke:#616161
+    style system fill:#e3f2fd,stroke:#1565c0
+    style messages fill:#fff3e0,stroke:#ef6c00
+    style tools fill:#e8f5e9,stroke:#2e7d32
+```
+
+**도구 스키마 구조** (각 도구별):
+```typescript
+{
+  type: "function",
+  name: "Bash",                    // 도구 이름
+  description: "Executes a...",    // prompt.ts에서 로드
+  input_schema: { ... },           // Zod → JSON Schema
+  strict: true,                    // 엄격 모드
+  cache_control: { type: "ephemeral" }  // 캐시 제어
+}
+```
+
+> 소스: [`src/services/api/claude.ts`](./src/services/api/claude.ts) · [`src/utils/api.ts`](./src/utils/api.ts)
+
+---
+
+### 4. Built-In Agent Types
+
+Claude Code에는 6개의 내장 에이전트가 [`src/tools/AgentTool/built-in/`](./src/tools/AgentTool/built-in/)에 정의되어 있습니다.
+
+| Agent Type | 모델 | 도구 접근 | 시스템 프롬프트 핵심 | 소스 |
+|:-----------|:-----|:---------|:-------------------|:-----|
+| **`general-purpose`** | inherit | 모든 도구 (`['*']`) | "Complete the task fully — don't gold-plate, but don't leave it half-done." | [`generalPurposeAgent.ts`](./src/tools/AgentTool/built-in/generalPurposeAgent.ts) |
+| **`Explore`** | haiku (외부) / inherit | Glob, Grep, Read, Bash(읽기전용) | "You are a file search specialist... **READ-ONLY MODE**" | [`exploreAgent.ts`](./src/tools/AgentTool/built-in/exploreAgent.ts) |
+| **`Plan`** | sonnet | Glob, Grep, Read, Bash(읽기전용) | "You are a software architect... **READ-ONLY PLANNING TASK**" | [`planAgent.ts`](./src/tools/AgentTool/built-in/planAgent.ts) |
+| **`verification`** | inherit | 모든 도구 (편집 제외) | "Adversarial testing — try to break implementation. PASS/FAIL/PARTIAL" | [`verificationAgent.ts`](./src/tools/AgentTool/built-in/verificationAgent.ts) |
+| **`claude-code-guide`** | haiku | WebFetch, WebSearch, Glob, Grep, Read | "Answer questions about Claude Code CLI, Agent SDK, Claude API" | [`claudeCodeGuideAgent.ts`](./src/tools/AgentTool/built-in/claudeCodeGuideAgent.ts) |
+| **`statusline-setup`** | inherit | Read, Edit | "Configure the user's Claude Code status line setting" | [`statuslineSetup.ts`](./src/tools/AgentTool/built-in/statuslineSetup.ts) |
+
+```mermaid
+graph TD
+    subgraph BuiltIn["Built-In Agents (6 types)"]
+        GP["general-purpose<br/>모든 도구, 범용 연구/실행"]
+        EX["Explore<br/>READ-ONLY, Haiku, 빠른 탐색"]
+        PL["Plan<br/>READ-ONLY, 아키텍처 설계"]
+        VF["verification<br/>적대적 테스트, PASS/FAIL"]
+        GD["claude-code-guide<br/>공식 문서 기반 가이드"]
+        SL["statusline-setup<br/>상태바 설정"]
+    end
+
+    subgraph Custom["Custom Agents"]
+        UA[".claude/agents/*.md<br/>사용자 정의 에이전트"]
+        JA[".claude/agents.json<br/>JSON 에이전트"]
+    end
+
+    subgraph Spawn["AgentTool 호출"]
+        Call["Agent(description, subagent_type, prompt)"]
+    end
+
+    Call -->|"subagent_type"| GP
+    Call -->|"subagent_type"| EX
+    Call -->|"subagent_type"| PL
+    Call -->|"subagent_type"| VF
+    Call -->|"subagent_type"| GD
+    Call -->|"subagent_type"| SL
+    Call -->|"subagent_type"| UA
+
+    style GP fill:#e3f2fd,stroke:#1565c0
+    style EX fill:#e8f5e9,stroke:#2e7d32
+    style PL fill:#f3e5f5,stroke:#7b1fa2
+    style VF fill:#ffebee,stroke:#c62828
+    style Custom fill:#fff3e0,stroke:#ef6c00
+```
+
+**Agent 정의 구조** ([`src/tools/AgentTool/loadAgentsDir.ts`](./src/tools/AgentTool/loadAgentsDir.ts)):
+```typescript
+type BaseAgentDefinition = {
+  agentType: string;                 // 고유 식별자
+  whenToUse: string;                 // 사용 시점 설명
+  tools?: string[];                  // 허용 도구 목록
+  disallowedTools?: string[];        // 금지 도구 목록
+  model?: string;                    // 모델 오버라이드
+  permissionMode?: PermissionMode;   // 'ask' | 'allow' | 'dontAsk'
+  maxTurns?: number;                 // 최대 턴 수
+  omitClaudeMd?: boolean;            // CLAUDE.md 생략 (토큰 절약)
+  isolation?: 'worktree' | 'remote'; // 격리 모드
+  memory?: 'user' | 'project' | 'local';
+  getSystemPrompt: () => string;     // 시스템 프롬프트 생성
+}
+```
+
+---
+
+### 5. Agent Spawning & Prompt Flow
+
+에이전트가 생성될 때 어떤 프롬프트가 어떤 순서로 조립되는지:
+
+```mermaid
+sequenceDiagram
+    participant Main as Main Agent
+    participant AT as AgentTool
+    participant Load as loadAgentsDir
+    participant Sub as Sub-Agent
+
+    Main->>AT: Agent({ subagent_type, prompt, description })
+    AT->>Load: 에이전트 정의 조회
+    Load-->>AT: AgentDefinition (시스템 프롬프트, 도구, 모델)
+
+    AT->>Sub: 서브에이전트 생성
+    Note over Sub: 시스템 프롬프트 조립 순서:
+    Note over Sub: 1. Agent.getSystemPrompt()
+    Note over Sub: 2. enhanceWithEnvDetails()
+    Note over Sub: 3. CLAUDE.md (omitClaudeMd가 아닌 경우)
+    Note over Sub: 4. 사용자 prompt (첫 메시지)
+
+    Sub->>Sub: 도구 실행 루프
+    Sub-->>AT: 최종 응답 (text)
+    AT-->>Main: 결과 반환 (caller에게 전달)
+```
+
+**Fork vs Fresh Agent:**
+
+```mermaid
+flowchart LR
+    subgraph Fork["Fork (subagent_type 생략)"]
+        F1["부모 컨텍스트 상속"]
+        F2["프롬프트 캐시 공유"]
+        F3["저비용"]
+        F4["중간 출력 불필요 시"]
+    end
+
+    subgraph Fresh["Fresh Agent (subagent_type 지정)"]
+        R1["독립 컨텍스트"]
+        R2["전체 브리핑 필요"]
+        R3["에이전트별 시스템 프롬프트"]
+        R4["특화된 도구 세트"]
+    end
+
+    Decision{"작업 유형?"}
+    Decision -->|"컨텍스트 재활용"| Fork
+    Decision -->|"특화 에이전트 필요"| Fresh
+
+    style Fork fill:#e8f5e9,stroke:#2e7d32
+    style Fresh fill:#e3f2fd,stroke:#1565c0
+```
+
+---
+
+### 6. Coordinator Mode
+
+Coordinator 모드가 활성화되면 ([`src/coordinator/coordinatorMode.ts`](./src/coordinator/coordinatorMode.ts)), 메인 에이전트가 **다수의 Worker를 병렬로 오케스트레이션**합니다.
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant Coord as Coordinator
+    participant W1 as Worker 1<br/>(조사)
+    participant W2 as Worker 2<br/>(조사)
+    participant W3 as Worker 3<br/>(구현)
+    participant W4 as Worker 4<br/>(검증)
+
+    User->>Coord: 작업 요청
+
+    rect rgb(232, 245, 233)
+        Note over Coord,W2: Phase 1: Research (병렬)
+        Coord->>W1: Agent(prompt: "파일 A 조사")
+        Coord->>W2: Agent(prompt: "파일 B 조사")
+        W1-->>Coord: task-notification (결과)
+        W2-->>Coord: task-notification (결과)
+    end
+
+    Note over Coord: Synthesis: 결과 종합 → 구체적 구현 명세 작성
+
+    rect rgb(227, 242, 253)
+        Note over Coord,W3: Phase 2: Implementation
+        Coord->>W3: Agent(prompt: "파일 X:42 수정,<br/>구체적 코드 스니펫 포함")
+        W3-->>Coord: task-notification (완료)
+    end
+
+    rect rgb(255, 235, 238)
+        Note over Coord,W4: Phase 3: Verification
+        Coord->>W4: Agent(subagent_type: verification,<br/>prompt: "변경사항 테스트")
+        W4-->>Coord: PASS / FAIL / PARTIAL
+    end
+
+    Coord-->>User: 최종 결과 보고
+```
+
+**Coordinator 프롬프트 핵심 규칙:**
+- **"절대 이해를 위임하지 마라"** — "네 조사 결과를 바탕으로 버그를 고쳐" ❌
+- **"항상 종합하라"** — 구체적 파일 경로, 라인 번호, 코드 스니펫 포함 ✅
+- **Worker에게 보내는 프롬프트에 사용자 원문을 포함하지 마라** — 종합한 명세만 전달
+
+**Worker → Coordinator 알림 형식:**
+```xml
+<task-notification>
+  <task-id>{agentId}</task-id>
+  <status>completed|failed|killed</status>
+  <summary>Human-readable status</summary>
+  <result>Agent's final text response</result>
+  <usage>
+    <total_tokens>N</total_tokens>
+    <tool_uses>N</tool_uses>
+    <duration_ms>N</duration_ms>
+  </usage>
+</task-notification>
+```
+
+---
+
+### 7. Context Compaction Prompt
+
+컨텍스트 윈도우가 한계에 도달하면 [`src/services/compact/prompt.ts`](./src/services/compact/prompt.ts)에서 압축 프롬프트가 실행됩니다.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Normal: 대화 진행
+
+    Normal --> ThresholdCheck: 매 턴마다 확인
+    ThresholdCheck --> Normal: 여유 있음
+    ThresholdCheck --> Compaction: 컨텍스트 한계 근접
+
+    state Compaction {
+        [*] --> AnalyzeConversation
+        AnalyzeConversation --> GenerateSummary
+        Note right of GenerateSummary: 도구 사용 금지 (NO_TOOLS_PREAMBLE)
+        Note right of GenerateSummary: 텍스트 전용 응답
+
+        state GenerateSummary {
+            [*] --> PrimaryRequest: 1. 주요 요청과 의도
+            PrimaryRequest --> TechnicalConcepts: 2. 핵심 기술 개념
+            TechnicalConcepts --> FilesAndCode: 3. 파일과 코드 스니펫
+            FilesAndCode --> ErrorsAndFixes: 4. 에러와 수정 내역
+            ErrorsAndFixes --> ProblemSolving: 5. 문제 해결 과정
+            ProblemSolving --> UserMessages: 6. 모든 사용자 메시지
+            UserMessages --> PendingTasks: 7. 대기 중 작업
+            PendingTasks --> CurrentWork: 8. 현재 작업 상태
+            CurrentWork --> NextStep: 9. 다음 단계 (인용 포함)
+        end
+
+        GenerateSummary --> ExtractMemory: 메모리 추출 통합
+        ExtractMemory --> ReplaceMessages: 기존 메시지를 요약으로 교체
+    end
+
+    Compaction --> Normal: 압축 완료, 대화 계속
+
+    Note right of Compaction: analysis 블록은 요약 전에 제거됨
+```
+
+**압축 프롬프트 출력 형식:**
+```
+<analysis>
+[사고 과정 — 모든 포인트가 커버되었는지 확인]
+</analysis>
+
+<summary>
+1. Primary Request and Intent: ...
+2. Key Technical Concepts: ...
+3. Files and Code Sections: [스니펫 + 중요도]
+4. Errors and fixes: ...
+5. Problem Solving: ...
+6. All user messages: [비도구 사용자 메시지 전체]
+7. Pending Tasks: ...
+8. Current Work: [정확한 작업 상태]
+9. Optional Next Step: [대화에서 인용]
+</summary>
+```
+
+---
+
+### 8. Memory Extraction Prompt
+
+세션 종료 시 [`src/services/extractMemories/prompts.ts`](./src/services/extractMemories/prompts.ts)에서 메모리 추출 에이전트가 실행됩니다.
+
+```mermaid
+flowchart TD
+    SessionEnd["세션 종료 / 압축 트리거"] --> Fork["포크된 서브에이전트 생성<br/>(프롬프트 캐시 공유)"]
+
+    Fork --> Analyze["최근 ~N개 메시지 분석"]
+
+    Analyze --> Classify{"4-Type 분류"}
+    Classify --> T1["User Feedback<br/><i>사용자 선호, 수정 지침</i>"]
+    Classify --> T2["Project Patterns<br/><i>프로젝트 패턴/관습</i>"]
+    Classify --> T3["Workflow Learnings<br/><i>워크플로우/프로세스</i>"]
+    Classify --> T4["Technical Discoveries<br/><i>기술적 발견</i>"]
+
+    T1 --> Save
+    T2 --> Save
+    T3 --> Save
+    T4 --> Save
+
+    subgraph Save["저장 프로세스 (2단계)"]
+        Step1["Step 1: 개별 메모리 파일 작성<br/>(frontmatter + 내용)"]
+        Step2["Step 2: MEMORY.md 인덱스 업데이트<br/>(1줄 포인터 추가)"]
+        Step1 --> Step2
+    end
+
+    Save --> Team{"팀 메모리?"}
+    Team -->|Yes| TeamSync["team/MEMORY.md에도 동기화"]
+    Team -->|No| Done["완료"]
+    TeamSync --> Done
+
+    style Fork fill:#f3e5f5,stroke:#7b1fa2
+    style Classify fill:#fff3e0,stroke:#ef6c00
+    style Save fill:#e8f5e9,stroke:#2e7d32
+```
+
+**Session Memory 템플릿** ([`src/services/SessionMemory/prompts.ts`](./src/services/SessionMemory/prompts.ts)):
+
+```markdown
+# Session Title
+# Current State          ← 압축 후 연속성에 가장 중요
+# Task specification
+# Files and Functions
+# Workflow               ← bash 명령어, 순서, 해석
+# Errors & Corrections
+# Codebase and System Documentation
+# Learnings
+# Key results
+# Worklog
+```
+
+**규칙:** 섹션당 ~2,000 토큰, 전체 최대 12,000 토큰. 포크된 서브에이전트가 백그라운드에서 자동 업데이트.
+
+---
+
+### 9. CLAUDE.md Loading Chain
+
+[`src/utils/claudemd.ts`](./src/utils/claudemd.ts)에서 CLAUDE.md 파일이 계층적으로 로드됩니다.
+
+```mermaid
+flowchart TD
+    subgraph Loading["CLAUDE.md 로딩 순서 (우선순위: 아래 > 위)"]
+        L1["1. /etc/claude-code/CLAUDE.md<br/><i>Managed — 전체 사용자 공통</i>"]
+        L2["2. ~/.claude/CLAUDE.md<br/><i>User — 개인 전역 설정</i>"]
+        L3["3. 프로젝트 루트/CLAUDE.md<br/>   .claude/CLAUDE.md<br/>   .claude/rules/*.md<br/><i>Project — 코드베이스 체크인</i>"]
+        L4["4. cwd까지 탐색하며<br/>   CLAUDE.local.md<br/><i>Local — 개인 프로젝트 설정</i>"]
+
+        L1 --> L2 --> L3 --> L4
+    end
+
+    L4 --> Include{"@include 지시어?"}
+    Include -->|"@path"| Resolve["참조 파일 재귀 로드<br/>(순환 참조 방지)"]
+    Include -->|"없음"| Concat["콘텐츠 연결"]
+    Resolve --> Concat
+
+    Concat --> Inject["getUserContext()에<br/>claudeMd로 주입"]
+    Inject --> Msg["messages[0]에<br/>system-reminder로 삽입"]
+
+    style Loading fill:#f5f5f5,stroke:#616161
+    style L1 fill:#ffebee,stroke:#c62828
+    style L2 fill:#fff3e0,stroke:#ef6c00
+    style L3 fill:#e3f2fd,stroke:#1565c0
+    style L4 fill:#e8f5e9,stroke:#2e7d32
+```
+
+**MEMORY.md 제한:** 최대 200줄 / 25,000 바이트. 초과 시 라인 경계에서 잘림.
+
+---
+
+### 10. End-to-End Prompt Flow Summary
+
+사용자 입력부터 Claude API 호출까지의 **전체 프롬프트 조립 흐름**:
+
+```mermaid
+flowchart TD
+    User["사용자 입력"] --> QE["QueryEngine.submitMessage()"]
+
+    QE --> FetchParts["fetchSystemPromptParts()"]
+
+    subgraph Build["프롬프트 조립"]
+        direction TB
+        SP["getSystemPrompt()<br/><i>정적 7개 + 동적 8개 섹션</i>"]
+        UC["getUserContext()<br/><i>claudeMd + currentDate</i>"]
+        SC["getSystemContext()<br/><i>gitStatus + cacheBreaker</i>"]
+        ESP["buildEffectiveSystemPrompt()<br/><i>우선순위 체인 적용</i>"]
+
+        SP --> ESP
+    end
+
+    FetchParts --> Build
+
+    Build --> QueryFn["query() 제너레이터<br/><i>src/query.ts</i>"]
+
+    QueryFn --> QM["queryModel()<br/><i>src/services/api/claude.ts</i>"]
+
+    subgraph Assembly["최종 조립 (paramsFromContext)"]
+        TS["toolToAPISchema()<br/>40개 도구 스키마"]
+        NM["normalizeMessagesForAPI()<br/>메시지 정규화"]
+        SB["buildSystemPromptBlocks()<br/>캐시 마커 부착"]
+        PU["prependUserContext()<br/>system-reminder 삽입"]
+        AS["appendSystemContext()<br/>git 상태 추가"]
+    end
+
+    QM --> Assembly
+
+    Assembly --> APICall["anthropic.beta.messages.create()<br/>스트리밍 호출"]
+
+    APICall --> Stream["응답 스트림 처리"]
+    Stream --> ToolExec{"tool_use 블록?"}
+    ToolExec -->|Yes| RunTool["도구 실행 → 결과 추가"]
+    RunTool --> QueryFn
+    ToolExec -->|No| Response["최종 응답 렌더링"]
+
+    style User fill:#e3f2fd,stroke:#1565c0
+    style Build fill:#f5f5f5,stroke:#616161
+    style Assembly fill:#fff3e0,stroke:#ef6c00
+    style APICall fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px
+    style Response fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px
+```
+
+**API 호출 시 전달되는 최종 구조:**
+
+```
+anthropic.beta.messages.create({
+  model: "claude-sonnet-4-20250514",
+
+  system: [                           ← 시스템 프롬프트
+    { text: "You are Claude Code...", cache_control: { scope: "global" } },
+    { text: "[동적 섹션들]" },
+    { text: "gitStatus: branch main..." }
+  ],
+
+  messages: [                         ← 대화 메시지
+    { role: "user", content: [
+      { text: "<system-reminder># claudeMd\n..." },  ← CLAUDE.md
+      { text: "사용자 실제 입력" }
+    ]},
+    { role: "assistant", content: [...] },
+    ...
+  ],
+
+  tools: [                            ← 도구 정의
+    { name: "Bash", description: "...", input_schema: {...} },
+    { name: "Read", description: "...", input_schema: {...} },
+    ...40+ tools
+  ],
+
+  thinking: { type: "adaptive" },     ← 사고 모드
+  betas: ["interleaved-thinking-...", "prompt-caching-scope-..."],
+  max_tokens: 16384
+})
+```
+
+**관련 소스 파일:**
+
+| 파일 | 역할 |
+|:-----|:-----|
+| [`src/constants/prompts.ts`](./src/constants/prompts.ts) | 시스템 프롬프트 섹션 생성 |
+| [`src/utils/systemPrompt.ts`](./src/utils/systemPrompt.ts) | 프롬프트 우선순위 체인 |
+| [`src/context.ts`](./src/context.ts) | User/System 컨텍스트 조립 |
+| [`src/utils/claudemd.ts`](./src/utils/claudemd.ts) | CLAUDE.md 계층 로딩 |
+| [`src/QueryEngine.ts`](./src/QueryEngine.ts) | 쿼리 제출 진입점 |
+| [`src/query.ts`](./src/query.ts) | 쿼리 실행 루프 |
+| [`src/services/api/claude.ts`](./src/services/api/claude.ts) | API 파라미터 최종 조립 |
+| [`src/utils/api.ts`](./src/utils/api.ts) | 도구 스키마 변환, 컨텍스트 주입 |
+| [`src/tools/AgentTool/prompt.ts`](./src/tools/AgentTool/prompt.ts) | 에이전트 도구 프롬프트 |
+| [`src/tools/AgentTool/built-in/`](./src/tools/AgentTool/built-in/) | 6개 내장 에이전트 정의 |
+| [`src/coordinator/coordinatorMode.ts`](./src/coordinator/coordinatorMode.ts) | Coordinator 시스템 프롬프트 |
+| [`src/services/compact/prompt.ts`](./src/services/compact/prompt.ts) | 컨텍스트 압축 프롬프트 |
+| [`src/services/SessionMemory/prompts.ts`](./src/services/SessionMemory/prompts.ts) | 세션 메모리 템플릿 |
+| [`src/services/extractMemories/prompts.ts`](./src/services/extractMemories/prompts.ts) | 메모리 추출 프롬프트 |
+| [`src/buddy/prompt.ts`](./src/buddy/prompt.ts) | Buddy 컴패니언 프롬프트 |
 
 ---
 
