@@ -75,6 +75,7 @@ graph TD
 | 1️⃣6️⃣ | [**다른 코드 에이전트와의 비교**](./16_Comparison.md) | ⚔️ Codex, Cursor, Copilot, Aider, Devin 비교 분석 |
 | 1️⃣7️⃣ | [**프롬프트 아키텍처 완전 해부**](./17_Prompt_Architecture.md) | 🧬 54개 프롬프트 파일 전수 분석, 지시문 원문 해부, 설계 패턴 |
 | 1️⃣8️⃣ | [**도메인별 에이전트 적용 전략**](./18_Domain_Applications.md) | 🌐 8개 분야(웹/데이터/DevOps/보안/교육 등) 적용 기법 |
+| 1️⃣9️⃣ | [**Anthropic만의 비법 26가지**](./19_Anthropic_Secrets.md) | 🔮 캐시 7중 최적화, DCE, Undercover, 투기적 실행, Auto-Dream |
 
 ## 🚀 시작하기
 
