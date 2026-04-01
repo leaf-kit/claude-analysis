@@ -10,7 +10,7 @@
 | 🧑‍💻 **개발자** | Claude Code의 아키텍처와 실행 흐름 파악 |
 | 🏗️ **엔지니어** | 소스코드 레벨에서 프롬프트 조립, 에이전트 스포닝 메커니즘 이해 |
 
-## 📚 학습 순서 (20장)
+## 📚 학습 순서 (21장)
 
 ```mermaid
 graph TD
@@ -77,6 +77,7 @@ graph TD
 | 1️⃣8️⃣ | [**도메인별 에이전트 적용 전략**](./18_Domain_Applications.md) | 🌐 8개 분야(웹/데이터/DevOps/보안/교육 등) 적용 기법 |
 | 1️⃣9️⃣ | [**Anthropic만의 비법 26가지**](./19_Anthropic_Secrets.md) | 🔮 캐시 7중 최적화, DCE, Undercover, 투기적 실행, Auto-Dream |
 | 2️⃣0️⃣ | [**터미널 도구와 컨텍스트 절약 비법**](./20_Terminal_Tools_Context.md) | 🖥️ 전용 도구 라우팅, 출력 잘라내기, ARGV0, 캐시 안정성, 10가지 꿀팁 |
+| 2️⃣1️⃣ | [**Claude Code 팀 역공학**](./21_Team_Reverse_Engineering.md) | 🕵️ 창립 3인, 5개 팀 13-18명, 600+ 피처 플래그, 숨겨진 비밀 7가지, 프롬프트 복원 |
 
 ## 🚀 시작하기
 
